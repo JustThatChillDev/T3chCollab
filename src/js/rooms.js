@@ -93,9 +93,9 @@ export const getMyRooms = async () => {
 }
 
 /**
- * Join a room using its Room ID.
+ * Join a room using its invite code.
  */
-export const joinRoom = async (roomId) => {
+export const joinRoom = async (inviteCode) => {
 
   const {
     data: {
@@ -111,34 +111,66 @@ export const joinRoom = async (roomId) => {
     }
   }
 
-  const cleanRoomId =
-    roomId.trim()
+  const cleanInviteCode =
+    inviteCode.trim().toUpperCase()
 
-  if (!cleanRoomId) {
+  if (!cleanInviteCode) {
     return {
       success: false,
-      error: 'Please enter a Room ID.'
+      error: 'Please enter an invite code.'
     }
   }
 
-  const { error } =
-    await supabase
-      .from('room_members')
-      .insert({
-        room_id: cleanRoomId,
-        user_id: user.id
-      })
+  // Find the room using its invite code
+  const {
+    data: room,
+    error: roomError
+  } = await supabase
+    .from('rooms')
+    .select('id')
+    .eq('invite_code', cleanInviteCode)
+    .maybeSingle()
 
-  if (error) {
+  if (roomError) {
 
     console.error(
-      'Error joining room:',
-      error
+      'Error finding room:',
+      roomError
     )
 
     return {
       success: false,
-      error: error.message
+      error: roomError.message
+    }
+  }
+
+  if (!room) {
+    return {
+      success: false,
+      error: 'Invalid invite code.'
+    }
+  }
+
+  // Join the room
+  const {
+    error: membershipError
+  } = await supabase
+    .from('room_members')
+    .insert({
+      room_id: room.id,
+      user_id: user.id
+    })
+
+  if (membershipError) {
+
+    console.error(
+      'Error joining room:',
+      membershipError
+    )
+
+    return {
+      success: false,
+      error: membershipError.message
     }
   }
 
@@ -147,7 +179,6 @@ export const joinRoom = async (roomId) => {
     error: null
   }
 }
-
 
 /**
  * Create a new room.
