@@ -1,0 +1,783 @@
+/* ============================================================
+   DISCORD DARK THEME - Midnight Sleek
+   ============================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: #0b0e11;
+  color: #e3e5e8;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0b0e11;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  background: #111318;
+  padding: 6px 24px;
+  border-bottom: 1px solid #1e2128;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  height: 48px;
+}
+
+header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #6c7af5, #8b99ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+header h1 span {
+  font-weight: 300;
+  -webkit-text-fill-color: #5e6673;
+  color: #5e6673;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.user-info #username {
+  font-weight: 500;
+  font-size: 13px;
+  color: #e3e5e8;
+}
+
+.user-info .user-id {
+  background: #1e2128;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #7e8695;
+  border: 1px solid #2a2e38;
+}
+
+#logoutBtn {
+  background: #ed4245;
+  border: none;
+  color: white;
+  padding: 4px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#logoutBtn:hover {
+  background: #c0353a;
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.app-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.room-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #111318;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #1e2128;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 10px 16px;
+  border-bottom: 1px solid #1e2128;
+}
+
+.sidebar-header h2 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7e8695;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0;
+}
+
+#createRoomBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: #1e2128;
+  color: #b5bac1;
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#createRoomBtn:hover {
+  background: #5865f2;
+  color: white;
+  transform: rotate(90deg);
+}
+
+.room-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 10px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.room-list::-webkit-scrollbar-thumb {
+  background: #1e2128;
+  border-radius: 10px;
+}
+
+.room-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.room-item {
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #7e8695;
+  font-size: 14px;
+  font-weight: 450;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  position: relative;
+}
+
+.room-item:hover {
+  background: #1e2128;
+  color: #e3e5e8;
+}
+
+.room-item.active {
+  background: #2a2e38;
+  color: #e3e5e8;
+  font-weight: 500;
+}
+
+.room-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 4px;
+  height: calc(100% - 8px);
+  background: #5865f2;
+  border-radius: 0 4px 4px 0;
+}
+
+.empty-message {
+  color: #4e5663;
+  font-size: 13px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+/* ============================================================
+   CONTENT AREA
+   ============================================================ */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #0b0e11;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #7e8695;
+}
+
+.placeholder h2 {
+  font-weight: 600;
+  font-size: 24px;
+  color: #e3e5e8;
+  margin-bottom: 8px;
+}
+
+.placeholder p {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.phase-info {
+  margin-top: 16px;
+  font-size: 11px;
+  opacity: 0.3;
+  letter-spacing: 0.5px;
+  color: #4e5663;
+}
+
+/* ============================================================
+   ROOM VIEW
+   ============================================================ */
+.room-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 16px 24px;
+}
+
+.room-view-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #1e2128;
+  flex-shrink: 0;
+}
+
+.room-view-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e3e5e8;
+  margin: 0 0 4px 0;
+}
+
+.room-view-header p {
+  color: #7e8695;
+  font-size: 13px;
+  margin: 0;
+}
+
+.invite-code {
+  margin-top: 8px;
+  font-size: 12px;
+  background: #111318;
+  padding: 4px 14px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #1e2128;
+}
+
+.invite-code strong {
+  color: #e3e5e8;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+#copyInviteBtn {
+  background: #1e2128;
+  border: none;
+  color: #b5bac1;
+  padding: 2px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+#copyInviteBtn:hover {
+  background: #2a2e38;
+  color: #e3e5e8;
+}
+
+.room-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#createChannelBtn {
+  background: #1e2128;
+  border: none;
+  color: #b5bac1;
+  padding: 5px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.15s;
+  font-weight: 500;
+}
+
+#createChannelBtn:hover {
+  background: #2a2e38;
+  color: #e3e5e8;
+}
+
+.danger-button {
+  background: #ed4245;
+  border: none;
+  color: white;
+  padding: 5px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.danger-button:hover {
+  background: #c0353a;
+}
+
+/* ============================================================
+   CHANNELS
+   ============================================================ */
+.channel-section {
+  margin-top: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.channel-section h3 {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7e8695;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 6px 0;
+}
+
+#channelList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.channel-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.channel-item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #7e8695;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.12s;
+}
+
+.channel-item:hover {
+  background: #1e2128;
+  color: #e3e5e8;
+}
+
+.channel-item.active {
+  background: #2a2e38;
+  color: #e3e5e8;
+  font-weight: 500;
+}
+
+.delete-channel-button {
+  background: transparent;
+  border: none;
+  color: #4e5663;
+  font-size: 16px;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-row:hover .delete-channel-button {
+  opacity: 0.6;
+}
+
+.delete-channel-button:hover {
+  background: #1e2128;
+  color: #ed4245;
+  opacity: 1;
+}
+
+.delete-channel-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   CHANNEL VIEW (Chat)
+   ============================================================ */
+.channel-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0 24px 16px 24px;
+}
+
+.channel-header {
+  padding: 12px 0 16px 0;
+  border-bottom: 1px solid #1e2128;
+  flex-shrink: 0;
+}
+
+.channel-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e3e5e8;
+  margin: 0;
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+.message-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 4px 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scroll-behavior: smooth;
+}
+
+.message-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  background: #1e2128;
+  border-radius: 10px;
+}
+
+.message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message {
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: 0.1s;
+}
+
+.message:hover {
+  background: #111318;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.message-header strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e3e5e8;
+}
+
+.message-header span {
+  font-size: 10px;
+  color: #4e5663;
+}
+
+.message-content {
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  color: #e3e5e8;
+  padding-left: 2px;
+}
+
+.file-message-content {
+  background: #111318;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border-left: 3px solid #6c7af5;
+}
+
+.message-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  opacity: 0;
+  transition: 0.12s;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.message-actions button {
+  background: transparent;
+  border: none;
+  color: #4e5663;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+.message-actions button:hover {
+  background: #1e2128;
+  color: #b5bac1;
+}
+
+.message-actions .danger-button {
+  background: transparent;
+  color: #4e5663;
+  padding: 2px 10px;
+  border: none;
+}
+
+.message-actions .danger-button:hover {
+  background: #1e2128;
+  color: #ed4245;
+}
+
+/* ============================================================
+   MESSAGE FORM
+   ============================================================ */
+.message-form {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #1e2128;
+  align-items: center;
+}
+
+.message-form input {
+  flex: 1;
+  background: #111318;
+  border: 1px solid #1e2128;
+  border-radius: 8px;
+  padding: 10px 18px;
+  color: #e3e5e8;
+  font-size: 14px;
+  outline: none;
+  transition: 0.15s;
+  min-width: 0;
+}
+
+.message-form input:focus {
+  border-color: #2a2e38;
+  background: #111318;
+}
+
+.message-form input::placeholder {
+  color: #4e5663;
+}
+
+#attachFileBtn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #4e5663;
+  transition: 0.15s;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+#attachFileBtn:hover {
+  background: #1e2128;
+  color: #b5bac1;
+}
+
+.message-form button[type="submit"] {
+  background: linear-gradient(135deg, #5865f2, #6c7af5);
+  border: none;
+  color: white;
+  padding: 8px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.message-form button[type="submit"]:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(88, 101, 242, 0.3);
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #111318;
+  border: 1px solid #1e2128;
+  border-radius: 12px;
+  padding: 30px 34px;
+  width: min(90%, 440px);
+}
+
+.modal-content h2 {
+  color: #e3e5e8;
+  font-weight: 600;
+  font-size: 20px;
+  margin: 0 0 16px 0;
+}
+
+.modal-content label {
+  display: block;
+  color: #7e8695;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 14px 0 6px 0;
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  background: #0b0e11;
+  border: 1px solid #1e2128;
+  border-radius: 6px;
+  padding: 10px 16px;
+  color: #e3e5e8;
+  font-size: 14px;
+  outline: none;
+  transition: 0.15s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+  border-color: #5865f2;
+}
+
+.modal-content textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.modal-actions button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+#cancelRoomBtn {
+  background: transparent;
+  color: #7e8695;
+}
+
+#cancelRoomBtn:hover {
+  background: #1e2128;
+  color: #e3e5e8;
+}
+
+.modal-actions button[type="submit"] {
+  background: linear-gradient(135deg, #5865f2, #6c7af5);
+  color: white;
+}
+
+.modal-actions button[type="submit"]:hover {
+  box-shadow: 0 4px 16px rgba(88, 101, 242, 0.25);
+}
+
+/* ============================================================
+   MISC
+   ============================================================ */
+.empty-channel {
+  text-align: center;
+  padding: 40px 10px;
+  color: #4e5663;
+}
+
+.empty-channel h3 {
+  font-weight: 400;
+  color: #7e8695;
+  margin: 0 0 8px 0;
+}
+
+.empty-channel p {
+  margin: 0;
+}

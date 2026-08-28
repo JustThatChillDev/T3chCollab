@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T3chCollab</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+  <div id="app">
+
+    <header>
+      <h1>T3ch<span>Collab</span></h1>
+
+      <div class="user-info">
+        <span id="username">Loading...</span>
+        <span id="userId" class="user-id"></span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </header>
+
+    <main class="app-layout">
+
+      <!-- ROOM SIDEBAR -->
+      <aside class="room-sidebar">
+
+        <div class="sidebar-header">
+          <h2>Rooms</h2>
+          <button id="createRoomBtn" title="Create Room">+</button>
+        </div>
+
+        <div id="roomList" class="room-list">
+          <p class="empty-message">Loading rooms...</p>
+        </div>
+
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <section class="content-area">
+
+        <div id="welcomeScreen" class="placeholder">
+          <h2>Welcome to T3chCollab</h2>
+
+          <p>
+            Select a room to get started.
+          </p>
+
+          <p class="phase-info">
+            Phase 5: Room Invites 🚀
+          </p>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <!-- CREATE ROOM MODAL -->
+  <div id="createRoomModal" class="modal hidden">
+
+    <div class="modal-content">
+
+      <h2>Create a Room</h2>
+
+      <form id="createRoomForm">
+
+        <label for="roomName">
+          Room Name
+        </label>
+
+        <input
+          id="roomName"
+          type="text"
+          placeholder="e.g. T3ch Gamers"
+          maxlength="50"
+          required
+        >
+
+        <label for="roomDescription">
+          Description
+        </label>
+
+        <textarea
+          id="roomDescription"
+          placeholder="What's this room about?"
+          maxlength="200"
+        ></textarea>
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            id="cancelRoomBtn"
+          >
+            Cancel
+          </button>
+
+          <button type="submit">
+            Create Room
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+<script type="module">
+
+import {
+  initializeApp,
+  appState,
+  logout
+} from '../js/state.js'
+
+import {
+  getMyRooms,
+  createRoom,
+  deleteRoom,
+  getChannels,
+  createChannel,
+  deleteChannel
+} from '../js/rooms.js'
+
+import {
+  getMessages,
+  sendMessage,
+  editMessage,
+  deleteMessage,
+  subscribeToMessages,
+  unsubscribeFromMessages
+} from '../js/messages.js'
+
+import {
+  uploadFile,
+  getFiles,
+  getFileUrl,
+  deleteFile
+} from '../js/files.js'
+
+
+// =====================================================
+// ELEMENTS
+// =====================================================
+
+const usernameDisplay =
+  document.getElementById('username')
+
+const userIdDisplay =
+  document.getElementById('userId')
+
+const logoutBtn =
+  document.getElementById('logoutBtn')
+
+const roomList =
+  document.getElementById('roomList')
+
+const createRoomBtn =
+  document.getElementById('createRoomBtn')
+
+const createRoomModal =
+  document.getElementById('createRoomModal')
+
+const createRoomForm =
+  document.getElementById('createRoomForm')
+
+const cancelRoomBtn =
+  document.getElementById('cancelRoomBtn')
+
+const roomNameInput =
+  document.getElementById('roomName')
+
+const roomDescriptionInput =
+  document.getElementById('roomDescription')
+
+
+// =====================================================
+// REALTIME STATE
+// =====================================================
+
+let activeRealtimeChannel = null
+let activeChannelId = null
+
+
+// =====================================================
+// LOAD ROOMS
+// =====================================================
+
+async function loadRooms() {
+
+  roomList.innerHTML =
+    '<p class="empty-message">Loading rooms...</p>'
+
+  const result =
+    await getMyRooms()
+
+  if (!result.success) {
+
+    roomList.innerHTML =
+      `<p class="empty-message">
+        Failed to load rooms.
+      </p>`
+
+    console.error(
+      'Failed to load rooms:',
+      result.error
+    )
+
+    return
+  }
+
+  if (
+    !result.rooms ||
+    result.rooms.length === 0
+  ) {
+
+    roomList.innerHTML =
+      `<p class="empty-message">
+        No rooms yet.
+      </p>`
+
+    return
+  }
+
+  roomList.innerHTML = ''
+
+  result.rooms.forEach(room => {
+
+    const roomElement =
+      document.createElement('button')
+
+    roomElement.className =
+      'room-item'
+
+    roomElement.textContent =
+      room.name
+
+    roomElement.dataset.roomId =
+      room.id
+
+    roomElement.addEventListener(
+      'click',
+      () => {
+        selectRoom(room)
+      }
+    )
+
+    roomList.appendChild(
+      roomElement
+    )
+  })
+}
+
+
+// =====================================================
+// SELECT ROOM
+// =====================================================
+
+async function selectRoom(room) {
+
+  document
+    .querySelectorAll('.room-item')
+    .forEach(item => {
+      item.classList.remove('active')
+    })
+
+  const selected =
+    document.querySelector(
+      `[data-room-id="${room.id}"]`
+    )
+
+  if (selected) {
+    selected.classList.add('active')
+  }
+
+  const contentArea =
+    document.querySelector('.content-area')
+
+  contentArea.innerHTML = `
+    <div class="room-view">
+
+      <div class="room-view-header">
+
+        <div>
+
+          <h2>
+            ${escapeHtml(room.name)}
+          </h2>
+
+          <p>
+            ${
+              room.description
+                ? escapeHtml(room.description)
+                : 'No description.'
+            }
+          </p>
+
+          <div class="invite-code">
+
+            🔑 Invite Code:
+
+            <strong>
+              ${escapeHtml(
+                room.invite_code ||
+                'Unavailable'
+              )}
+            </strong>
+
+            ${
+              room.invite_code
+                ? `
+                  <button
+                    id="copyInviteBtn"
+                    type="button"
+                  >
+                    Copy
+                  </button>
+                `
+                : ''
+            }
+
+          </div>
+
+        </div>
+
+        <div class="room-actions">
+
+          <button id="createChannelBtn">
+            + Channel
+          </button>
+
+          ${
+            appState.user &&
+            appState.user.id === room.owner_id
+              ? `
+                <button
+                  id="deleteRoomBtn"
+                  class="danger-button"
+                >
+                  Delete Room
+                </button>
+              `
+              : ''
+          }
+
+        </div>
+
+      </div>
+
+
+      <div class="channel-section">
+
+        <h3>
+          Channels
+        </h3>
+
+        <div id="channelList">
+
+          <p class="empty-message">
+            Loading channels...
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+  `
+
+
+  const canDelete =
+    appState.user &&
+    appState.user.id === room.owner_id
+
+
+  await loadChannels(
+    room.id,
+    canDelete
+  )
+
+
+  // ===================================================
+  // COPY INVITE CODE
+  // ===================================================
+
+  const copyInviteBtn =
+    document.getElementById(
+      'copyInviteBtn'
+    )
+
+  if (copyInviteBtn) {
+
+    copyInviteBtn.addEventListener(
+      'click',
+      async () => {
+
+        try {
+
+          await navigator.clipboard.writeText(
+            room.invite_code
+          )
+
+          copyInviteBtn.textContent =
+            'Copied! ✓'
+
+          setTimeout(() => {
+
+            copyInviteBtn.textContent =
+              'Copy'
+
+          }, 1500)
+
+        } catch (error) {
+
+          console.error(
+            'Failed to copy invite code:',
+            error
+          )
+
+          alert(
+            'Could not copy the invite code.'
+          )
+        }
+      }
+    )
+  }
+
+
+  // ===================================================
+  // DELETE ROOM
+  // ===================================================
+
+  const deleteRoomBtn =
+    document.getElementById(
+      'deleteRoomBtn'
+    )
+
+  if (deleteRoomBtn) {
+
+    deleteRoomBtn.addEventListener(
+      'click',
+      async () => {
+
+        const confirmed =
+          confirm(
+            `Are you sure you want to delete "${room.name}"?\n\nThis will permanently delete the room, its channels, and its messages.`
+          )
+
+        if (!confirmed) {
+          return
+        }
+
+        deleteRoomBtn.disabled =
+          true
+
+        const result =
+          await deleteRoom(
+            room.id
+          )
+
+        if (!result.success) {
+
+          deleteRoomBtn.disabled =
+            false
+
+          alert(
+            'Failed to delete room: ' +
+            result.error
+          )
+
+          return
+        }
+
+        await loadRooms()
+
+        contentArea.innerHTML = `
+          <div class="placeholder">
+
+            <h2>
+              Room deleted
+            </h2>
+
+            <p>
+              Select another room to continue.
+            </p>
+
+          </div>
+        `
+      }
+    )
+  }
+
+
+  // ===================================================
+  // CREATE CHANNEL
+  // ===================================================
+
+  const createChannelBtn =
+    document.getElementById(
+      'createChannelBtn'
+    )
+
+  if (createChannelBtn) {
+
+    createChannelBtn.addEventListener(
+      'click',
+      () => {
+        createChannelPrompt(room)
+      }
+    )
+  }
+}
+
+
+// =====================================================
+// LOAD CHANNELS
+// =====================================================
+
+async function loadChannels(
+  roomId,
+  canDelete = false
+) {
+
+  const channelList =
+    document.getElementById(
+      'channelList'
+    )
+
+  if (!channelList) {
+    return
+  }
+
+  const result =
+    await getChannels(
+      roomId
+    )
+
+  if (!result.success) {
+
+    channelList.innerHTML =
+      `<p class="empty-message">
+        Failed to load channels.
+      </p>`
+
+    console.error(
+      'Failed to load channels:',
+      result.error
+    )
+
+    return
+  }
+
+  if (
+    !result.channels ||
+    result.channels.length === 0
+  ) {
+
+    channelList.innerHTML =
+      `<p class="empty-message">
+        No channels yet.
+      </p>`
+
+    return
+  }
+
+  channelList.innerHTML = ''
+
+  result.channels.forEach(channel => {
+
+    const channelRow =
+      document.createElement('div')
+
+    channelRow.className =
+      'channel-row'
+
+
+    // =================================================
+    // CHANNEL BUTTON
+    // =================================================
+
+    const channelElement =
+      document.createElement('button')
+
+    channelElement.className =
+      'channel-item'
+
+    channelElement.textContent =
+      '# ' + channel.name
+
+    channelElement.dataset.channelId =
+      channel.id
+
+    channelElement.addEventListener(
+      'click',
+      () => {
+        selectChannel(channel)
+      }
+    )
+
+    channelRow.appendChild(
+      channelElement
+    )
+
+
+    // =================================================
+    // DELETE CHANNEL
+    // =================================================
+
+    if (canDelete) {
+
+      const deleteButton =
+        document.createElement('button')
+
+      deleteButton.className =
+        'delete-channel-button'
+
+      deleteButton.textContent =
+        '×'
+
+      deleteButton.title =
+        'Delete channel'
+
+      deleteButton.addEventListener(
+        'click',
+        async event => {
+
+          event.stopPropagation()
+
+          const confirmed =
+            confirm(
+              `Delete #${channel.name}?\n\nAll messages in this channel will also be permanently deleted.`
+            )
+
+          if (!confirmed) {
+            return
+          }
+
+          deleteButton.disabled =
+            true
+
+          const result =
+            await deleteChannel(
+              channel.id
+            )
+
+          if (!result.success) {
+
+            deleteButton.disabled =
+              false
+
+            alert(
+              'Failed to delete channel: ' +
+              result.error
+            )
+
+            return
+          }
+
+          await loadChannels(
+            roomId,
+            canDelete
+          )
+        }
+      )
+
+      channelRow.appendChild(
+        deleteButton
+      )
+    }
+
+    channelList.appendChild(
+      channelRow
+    )
+  })
+}
+
+
+// =====================================================
+// SELECT CHANNEL
+// =====================================================
+
+async function selectChannel(channel) {
+
+  // ===================================================
+  // STOP PREVIOUS REALTIME SUBSCRIPTION
+  // ===================================================
+
+  if (activeRealtimeChannel) {
+
+    await unsubscribeFromMessages(
+      activeRealtimeChannel
+    )
+
+    activeRealtimeChannel =
+      null
+  }
+
+  activeChannelId =
+    channel.id
+
+
+  // ===================================================
+  // REMOVE OLD ACTIVE CHANNEL
+  // ===================================================
+
+  document
+    .querySelectorAll('.channel-item')
+    .forEach(item => {
+      item.classList.remove('active')
+    })
+
+
+  // ===================================================
+  // ACTIVATE SELECTED CHANNEL
+  // ===================================================
+
+  const selected =
+    document.querySelector(
+      `[data-channel-id="${channel.id}"]`
+    )
+
+  if (selected) {
+    selected.classList.add('active')
+  }
+
+
+  const contentArea =
+    document.querySelector(
+      '.content-area'
+    )
+
+
+  // ===================================================
+  // CHANNEL UI
+  // ===================================================
+
+  contentArea.innerHTML = `
+    <div class="channel-view">
+
+      <header class="channel-header">
+
+        <h2>
+          # ${escapeHtml(channel.name)}
+        </h2>
+
+      </header>
+
+
+      <div
+        id="messageList"
+        class="message-list"
+      >
+        <p class="empty-message">
+          Loading messages...
+        </p>
+      </div>
+
+
+      <form
+        id="messageForm"
+        class="message-form"
+      >
+
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Message #${escapeHtml(channel.name)}"
+          maxlength="2000"
+          autocomplete="off"
+          required
+        >
+
+
+        <input
+          id="fileInput"
+          type="file"
+          hidden
+        >
+
+
+        <button
+          id="attachFileBtn"
+          type="button"
+          title="Attach a file"
+        >
+          📎
+        </button>
+
+
+        <button
+          type="submit"
+        >
+          Send
+        </button>
+
+      </form>
+
+    </div>
+  `
+
+
+  // ===================================================
+  // LOAD MESSAGES
+  // ===================================================
+
+  await loadMessages(
+    channel.id
+  )
+
+
+  // ===================================================
+  // MESSAGE FORM ELEMENTS
+  // ===================================================
+
+  const messageForm =
+    document.getElementById(
+      'messageForm'
+    )
+
+  const messageInput =
+    document.getElementById(
+      'messageInput'
+    )
+
+  const fileInput =
+    document.getElementById(
+      'fileInput'
+    )
+
+  const attachFileBtn =
+    document.getElementById(
+      'attachFileBtn'
+    )
+
+
+  // ===================================================
+  // ATTACH FILE
+  // ===================================================
+
+  attachFileBtn.addEventListener(
+    'click',
+    () => {
+      fileInput.click()
+    }
+  )
+
+
+  // ===================================================
+  // FILE SELECTION
+  // ===================================================
+
+  fileInput.addEventListener(
+    'change',
+    async () => {
+
+      const file =
+        fileInput.files[0]
+
+      if (!file) {
+        return
+      }
+
+      attachFileBtn.disabled =
+        true
+
+      attachFileBtn.textContent =
+        '⏳'
+
+
+      // ===============================================
+      // CREATE FILE MESSAGE
+      // ===============================================
+
+      const result =
+        await sendMessage(
+          channel.id,
+          `📎 ${file.name}`
+        )
+
+
+      if (!result.success) {
+
+        attachFileBtn.disabled =
+          false
+
+        attachFileBtn.textContent =
+          '📎'
+
+        fileInput.value = ''
+
+        alert(
+          'Failed to create file message: ' +
+          result.error
+        )
+
+        return
+      }
+
+
+      const messageId =
+        result.message.id
+
+
+      // ===============================================
+      // UPLOAD FILE
+      // ===============================================
+
+      const uploadResult =
+        await uploadFile(
+          channel.id,
+          messageId,
+          file
+        )
+
+
+      if (!uploadResult.success) {
+
+        attachFileBtn.disabled =
+          false
+
+        attachFileBtn.textContent =
+          '📎'
+
+        fileInput.value = ''
+
+        alert(
+          'Failed to upload file: ' +
+          uploadResult.error
+        )
+
+        return
+      }
+
+
+      // ===============================================
+      // CLEAN UP
+      // ===============================================
+
+      attachFileBtn.disabled =
+        false
+
+      attachFileBtn.textContent =
+        '📎'
+
+      fileInput.value = ''
+
+
+      await loadMessages(
+        channel.id
+      )
+    }
+  )
+
+
+  // ===================================================
+  // SEND MESSAGE
+  // ===================================================
+
+  messageForm.addEventListener(
+    'submit',
+    async event => {
+
+      event.preventDefault()
+
+      const content =
+        messageInput.value.trim()
+
+      if (!content) {
+        return
+      }
+
+      messageInput.disabled =
+        true
+
+      const result =
+        await sendMessage(
+          channel.id,
+          content
+        )
+
+      messageInput.disabled =
+        false
+
+      if (!result.success) {
+
+        alert(
+          'Failed to send message: ' +
+          result.error
+        )
+
+        messageInput.focus()
+
+        return
+      }
+
+      messageInput.value = ''
+
+      delete messageInput.dataset.replyTo
+
+      messageInput.focus()
+    }
+  )
+
+
+  // ===================================================
+  // REALTIME
+  // ===================================================
+
+  activeRealtimeChannel =
+    subscribeToMessages(
+      channel.id,
+      async newMessage => {
+
+        if (
+          activeChannelId !==
+          channel.id
+        ) {
+          return
+        }
+
+        console.log(
+          'Realtime message received:',
+          newMessage
+        )
+
+        await loadMessages(
+          channel.id
+        )
+      }
+    )
+
+
+  messageInput.focus()
+}
+
+
+// =====================================================
+// LOAD MESSAGES
+// =====================================================
+
+async function loadMessages(
+  channelId
+) {
+
+  const messageList =
+    document.getElementById(
+      'messageList'
+    )
+
+  if (!messageList) {
+    return
+  }
+
+  const result =
+    await getMessages(
+      channelId
+    )
+
+  if (!result.success) {
+
+    messageList.innerHTML =
+      `<p class="empty-message">
+        Failed to load messages.
+      </p>`
+
+    console.error(
+      'Failed to load messages:',
+      result.error
+    )
+
+    return
+  }
+
+  if (
+    !result.messages ||
+    result.messages.length === 0
+  ) {
+
+    messageList.innerHTML =
+      `<div class="empty-channel">
+
+        <h3>
+          No messages yet.
+        </h3>
+
+        <p>
+          Be the first to say something!
+        </p>
+
+      </div>`
+
+    return
+  }
+
+  messageList.innerHTML = ''
+
+
+  // ===================================================
+  // RENDER EACH MESSAGE
+  // ===================================================
+
+  result.messages.forEach(message => {
+
+    const messageElement =
+      document.createElement('div')
+
+    messageElement.className =
+      'message'
+
+    messageElement.dataset.messageId =
+      message.id
+
+
+    const time =
+      new Date(
+        message.created_at
+      ).toLocaleString()
+
+
+    const isOwnMessage =
+      appState.user &&
+      message.user_id ===
+        appState.user.id
+
+
+    const isFileMessage =
+      message.files &&
+      message.files.length > 0
+
+
+    // =================================================
+    // FILE MESSAGE
+    // =================================================
+
+    if (isFileMessage) {
+
+      const file =
+        message.files[0]
+
+
+      messageElement.innerHTML = `
+        <div class="message-header">
+
+          <strong>
+            ${escapeHtml(
+              getDisplayName(
+                message.user_id
+              )
+            )}
+          </strong>
+
+          <span>
+            ${escapeHtml(time)}
+          </span>
+
+        </div>
+
+
+        <div class="message-content file-message-content">
+
+          📎 ${escapeHtml(
+            file.filename
+          )}
+
+        </div>
+
+
+        <div class="message-actions">
+
+          <button
+            class="download-file-button"
+            type="button"
+          >
+            Download
+          </button>
+
+
+          ${
+            isOwnMessage
+              ? `
+                <button
+                  class="delete-file-message-button danger-button"
+                  type="button"
+                >
+                  🗑 Delete
+                </button>
+              `
+              : ''
+          }
+
+        </div>
+      `
+
+
+      // ===============================================
+      // DOWNLOAD FILE
+      // ===============================================
+
+      const downloadButton =
+        messageElement.querySelector(
+          '.download-file-button'
+        )
+
+      downloadButton.addEventListener(
+        'click',
+        async () => {
+
+          downloadButton.disabled =
+            true
+
+          downloadButton.textContent =
+            '⏳ Downloading...'
+
+          const urlResult =
+            await getFileUrl(
+              file.storage_path
+            )
+
+          if (!urlResult.success) {
+
+            downloadButton.disabled =
+              false
+
+            downloadButton.textContent =
+              'Download'
+
+            alert(
+              'Failed to get file URL: ' +
+              urlResult.error
+            )
+
+            return
+          }
+
+
+          const link =
+            document.createElement('a')
+
+          link.href =
+            urlResult.url
+
+          link.download =
+            file.filename
+
+          link.target =
+            '_blank'
+
+          link.rel =
+            'noopener noreferrer'
+
+          document.body.appendChild(
+            link
+          )
+
+          link.click()
+
+          link.remove()
+
+
+          downloadButton.disabled =
+            false
+
+          downloadButton.textContent =
+            'Download'
+        }
+      )
+
+
+      // ===============================================
+      // DELETE FILE MESSAGE
+      // ===============================================
+
+      const deleteFileMessageButton =
+        messageElement.querySelector(
+          '.delete-file-message-button'
+        )
+
+      if (deleteFileMessageButton) {
+
+        deleteFileMessageButton.addEventListener(
+          'click',
+          async () => {
+
+            const confirmed =
+              confirm(
+                `Delete "${file.filename}"?`
+              )
+
+            if (!confirmed) {
+              return
+            }
+
+            deleteFileMessageButton.disabled =
+              true
+
+
+            // =========================================
+            // DELETE STORAGE FILE + FILE RECORD
+            // =========================================
+
+            const deleteResult =
+              await deleteFile(
+                file
+              )
+
+            if (!deleteResult.success) {
+
+              deleteFileMessageButton.disabled =
+                false
+
+              alert(
+                'Failed to delete file: ' +
+                deleteResult.error
+              )
+
+              return
+            }
+
+
+            // =========================================
+            // DELETE THE MESSAGE TOO
+            // =========================================
+
+            const messageDeleteResult =
+              await deleteMessage(
+                message.id
+              )
+
+            if (!messageDeleteResult.success) {
+
+              console.error(
+                'File deleted but message could not be deleted:',
+                messageDeleteResult.error
+              )
+
+              alert(
+                'The file was deleted, but the file message could not be removed: ' +
+                messageDeleteResult.error
+              )
+
+              await loadMessages(
+                channelId
+              )
+
+              return
+            }
+
+
+            await loadMessages(
+              channelId
+            )
+          }
+        )
+      }
+
+
+      // ===============================================
+      // IMPORTANT:
+      // DO NOT ADD REPLY / COPY / EDIT BUTTONS
+      // TO FILE MESSAGES.
+      // ===============================================
+
+      messageList.appendChild(
+        messageElement
+      )
+
+      return
+    }
+
+
+    // =================================================
+    // NORMAL MESSAGE
+    // =================================================
+
+    messageElement.innerHTML = `
+      <div class="message-header">
+
+        <strong>
+          ${escapeHtml(
+            getDisplayName(
+              message.user_id
+            )
+          )}
+        </strong>
+
+        <span>
+          ${escapeHtml(time)}
+        </span>
+
+      </div>
+
+
+      <div class="message-content">
+
+        ${escapeHtml(
+          message.content
+        )}
+
+      </div>
+
+
+      <div class="message-actions">
+
+        <button
+          class="reply-message-button"
+          type="button"
+        >
+          ↩ Reply
+        </button>
+
+
+        <button
+          class="copy-message-button"
+          type="button"
+        >
+          📋 Copy
+        </button>
+
+
+        ${
+          isOwnMessage
+            ? `
+              <button
+                class="edit-message-button"
+                type="button"
+              >
+                ✏ Edit
+              </button>
+
+              <button
+                class="delete-message-button danger-button"
+                type="button"
+              >
+                🗑 Delete
+              </button>
+            `
+            : ''
+        }
+
+      </div>
+    `
+
+
+    // =================================================
+    // REPLY
+    // =================================================
+
+    const replyButton =
+      messageElement.querySelector(
+        '.reply-message-button'
+      )
+
+    if (replyButton) {
+
+      replyButton.addEventListener(
+        'click',
+        () => {
+
+          const messageInput =
+            document.getElementById(
+              'messageInput'
+            )
+
+          if (!messageInput) {
+            return
+          }
+
+          messageInput.value =
+            `@${getDisplayName(
+              message.user_id
+            )} `
+
+          messageInput.focus()
+
+          messageInput.dataset.replyTo =
+            message.id
+        }
+      )
+    }
+
+
+    // =================================================
+    // COPY
+    // =================================================
+
+    const copyButton =
+      messageElement.querySelector(
+        '.copy-message-button'
+      )
+
+    if (copyButton) {
+
+      copyButton.addEventListener(
+        'click',
+        async () => {
+
+          try {
+
+            await navigator.clipboard.writeText(
+              message.content
+            )
+
+            copyButton.textContent =
+              'Copied! ✓'
+
+            setTimeout(() => {
+
+              copyButton.textContent =
+                '📋 Copy'
+
+            }, 1500)
+
+          } catch (error) {
+
+            console.error(
+              'Failed to copy message:',
+              error
+            )
+
+            alert(
+              'Could not copy the message.'
+            )
+          }
+        }
+      )
+    }
+
+
+    // =================================================
+    // EDIT
+    // =================================================
+
+    const editButton =
+      messageElement.querySelector(
+        '.edit-message-button'
+      )
+
+    if (editButton) {
+
+      editButton.addEventListener(
+        'click',
+        async () => {
+
+          const newContent =
+            prompt(
+              'Edit your message:',
+              message.content
+            )
+
+          if (
+            newContent === null ||
+            !newContent.trim()
+          ) {
+            return
+          }
+
+          const result =
+            await editMessage(
+              message.id,
+              newContent
+            )
+
+          if (!result.success) {
+
+            alert(
+              'Failed to edit message: ' +
+              result.error
+            )
+
+            return
+          }
+
+          await loadMessages(
+            channelId
+          )
+        }
+      )
+    }
+
+
+    // =================================================
+    // DELETE NORMAL MESSAGE
+    // =================================================
+
+    const deleteButton =
+      messageElement.querySelector(
+        '.delete-message-button'
+      )
+
+    if (deleteButton) {
+
+      deleteButton.addEventListener(
+        'click',
+        async () => {
+
+          const confirmed =
+            confirm(
+              'Delete this message?'
+            )
+
+          if (!confirmed) {
+            return
+          }
+
+          deleteButton.disabled =
+            true
+
+          const result =
+            await deleteMessage(
+              message.id
+            )
+
+          if (!result.success) {
+
+            deleteButton.disabled =
+              false
+
+            alert(
+              'Failed to delete message: ' +
+              result.error
+            )
+
+            return
+          }
+
+          await loadMessages(
+            channelId
+          )
+        }
+      )
+    }
+
+
+    messageList.appendChild(
+      messageElement
+    )
+  })
+
+
+  // ===================================================
+  // SCROLL TO BOTTOM
+  // ===================================================
+
+  messageList.scrollTop =
+    messageList.scrollHeight
+}
+
+
+// =====================================================
+// CREATE CHANNEL
+// =====================================================
+
+async function createChannelPrompt(
+  room
+) {
+
+  const name =
+    prompt(
+      'Enter a channel name:'
+    )
+
+  if (!name) {
+    return
+  }
+
+  const cleanName =
+    name.trim()
+
+  if (!cleanName) {
+    return
+  }
+
+  const result =
+    await createChannel(
+      room.id,
+      cleanName
+    )
+
+  if (!result.success) {
+
+    alert(
+      'Failed to create channel: ' +
+      result.error
+    )
+
+    return
+  }
+
+  await loadChannels(
+    room.id,
+    room.owner_id ===
+      appState.user.id
+  )
+}
+
+
+// =====================================================
+// CREATE ROOM
+// =====================================================
+
+createRoomBtn.addEventListener(
+  'click',
+  () => {
+
+    createRoomModal.classList.remove(
+      'hidden'
+    )
+
+    roomNameInput.focus()
+  }
+)
+
+
+cancelRoomBtn.addEventListener(
+  'click',
+  () => {
+    closeCreateRoomModal()
+  }
+)
+
+
+createRoomForm.addEventListener(
+  'submit',
+  async event => {
+
+    event.preventDefault()
+
+    const name =
+      roomNameInput.value.trim()
+
+    const description =
+      roomDescriptionInput.value.trim()
+
+    if (!name) {
+      return
+    }
+
+    const result =
+      await createRoom(
+        name,
+        description
+      )
+
+    if (!result.success) {
+
+      alert(
+        'Failed to create room: ' +
+        result.error
+      )
+
+      return
+    }
+
+    closeCreateRoomModal()
+
+    await loadRooms()
+  }
+)
+
+
+function closeCreateRoomModal() {
+
+  createRoomModal.classList.add(
+    'hidden'
+  )
+
+  createRoomForm.reset()
+}
+
+
+// =====================================================
+// FILE SIZE
+// =====================================================
+
+function formatFileSize(
+  bytes
+) {
+
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
+
+  const units = [
+    'Bytes',
+    'KB',
+    'MB',
+    'GB'
+  ]
+
+  const index =
+    Math.floor(
+      Math.log(bytes) /
+      Math.log(1024)
+    )
+
+  const size =
+    bytes /
+    Math.pow(
+      1024,
+      index
+    )
+
+  return (
+    size.toFixed(2) +
+    ' ' +
+    units[index]
+  )
+}
+
+
+// =====================================================
+// HTML ESCAPING
+// =====================================================
+
+function escapeHtml(
+  value
+) {
+
+  const div =
+    document.createElement(
+      'div'
+    )
+
+  div.textContent =
+    value ?? ''
+
+  return div.innerHTML
+}
+
+
+// =====================================================
+// DISPLAY NAME
+// =====================================================
+
+function getDisplayName(
+  userId
+) {
+
+  if (
+    appState.user &&
+    userId ===
+      appState.user.id
+  ) {
+
+    return (
+      appState.profile?.username ||
+      appState.user.email ||
+      'User'
+    )
+  }
+
+  return 'User'
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+logoutBtn.addEventListener(
+  'click',
+  async () => {
+
+    const result =
+      await logout()
+
+    if (result.success) {
+
+      window.location.href =
+        'login.html'
+
+    } else {
+
+      alert(
+        'Logout failed: ' +
+        result.error
+      )
+    }
+  }
+)
+
+
+// =====================================================
+// INITIALIZE APP
+// =====================================================
+
+async function loadApp() {
+
+  await initializeApp()
+
+  if (!appState.isAuthenticated) {
+
+    window.location.href =
+      'login.html'
+
+    return
+  }
+
+  usernameDisplay.textContent =
+    appState.profile?.username ||
+    appState.user.email ||
+    'User'
+
+  userIdDisplay.textContent =
+    'ID: ' +
+    appState.user.id.substring(
+      0,
+      8
+    ) +
+    '...'
+
+  await loadRooms()
+}
+
+
+loadApp()
+
+</script>
+</body>
+</html>

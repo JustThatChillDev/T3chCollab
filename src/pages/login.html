@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - T3chCollab</title>
+  <link rel="stylesheet" href="../css/auth.css">
+</head>
+
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>T3ch<span>Collab</span></h1>
+      <p>Welcome back</p>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <div id="alertContainer"></div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter your password"
+          required
+          autocomplete="current-password"
+          minlength="6"
+        >
+      </div>
+
+      <button type="submit" class="auth-btn" id="loginBtn">
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account?
+      <a href="signup.html">Sign up</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { signIn } from '../js/auth.js'
+    import { initializeApp, updateState, appState } from '../js/state.js'
+
+    const form = document.getElementById('loginForm')
+    const emailInput = document.getElementById('email')
+    const passwordInput = document.getElementById('password')
+    const loginBtn = document.getElementById('loginBtn')
+    const alertContainer = document.getElementById('alertContainer')
+
+    function showAlert(message, type = 'error') {
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type}">${message}</div>
+      `
+    }
+
+    function clearAlert() {
+      alertContainer.innerHTML = ''
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault()
+      clearAlert()
+
+      const email = emailInput.value.trim()
+      const password = passwordInput.value
+
+      if (!email || !password) {
+        showAlert('Please enter both email and password')
+        return
+      }
+
+      loginBtn.disabled = true
+      loginBtn.textContent = 'Signing in...'
+
+      try {
+        const result = await signIn(email, password)
+
+        if (result.success) {
+          showAlert('Login successful! Redirecting...', 'success')
+
+          updateState({
+            user: result.user,
+            session: result.session,
+            isAuthenticated: true
+          })
+
+          setTimeout(() => {
+            window.location.href = 'app.html'
+          }, 1000)
+        } else {
+          showAlert(result.error || 'Login failed. Please try again.')
+          loginBtn.disabled = false
+          loginBtn.textContent = 'Sign In'
+        }
+      } catch (error) {
+        console.error('Login error:', error)
+        showAlert('An unexpected error occurred. Please try again.')
+        loginBtn.disabled = false
+        loginBtn.textContent = 'Sign In'
+      }
+    }
+
+    async function checkAuth() {
+      await initializeApp()
+
+      if (appState.isAuthenticated) {
+        window.location.href = 'app.html'
+      }
+    }
+
+    form.addEventListener('submit', handleLogin)
+    emailInput.addEventListener('input', clearAlert)
+    passwordInput.addEventListener('input', clearAlert)
+
+    checkAuth()
+  </script>
+</body>
+</html>

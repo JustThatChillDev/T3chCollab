@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - T3chCollab</title>
+  <link rel="stylesheet" href="../css/auth.css">
+</head>
+
+<body>
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>T3ch<span>Collab</span></h1>
+      <p>Create your account</p>
+    </div>
+
+    <form id="signupForm" class="auth-form">
+      <div id="alertContainer"></div>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          placeholder="Choose a username"
+          required
+          autocomplete="username"
+          minlength="2"
+          maxlength="30"
+        >
+        <span class="hint">2-30 characters</span>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Create a password"
+          required
+          autocomplete="new-password"
+          minlength="6"
+        >
+        <span class="hint">At least 6 characters</span>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          placeholder="Confirm your password"
+          required
+          autocomplete="new-password"
+          minlength="6"
+        >
+      </div>
+
+      <button type="submit" class="auth-btn" id="signupBtn">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account?
+      <a href="login.html">Sign in</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { signUp } from '../js/auth.js'
+    import { initializeApp, appState } from '../js/state.js'
+
+    const form = document.getElementById('signupForm')
+    const usernameInput = document.getElementById('username')
+    const emailInput = document.getElementById('email')
+    const passwordInput = document.getElementById('password')
+    const confirmInput = document.getElementById('confirmPassword')
+    const signupBtn = document.getElementById('signupBtn')
+    const alertContainer = document.getElementById('alertContainer')
+
+    function showAlert(message, type = 'error') {
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type}">${message}</div>
+      `
+    }
+
+    function clearAlert() {
+      alertContainer.innerHTML = ''
+    }
+
+    async function handleSignup(e) {
+      e.preventDefault()
+      clearAlert()
+
+      const username = usernameInput.value.trim()
+      const email = emailInput.value.trim()
+      const password = passwordInput.value
+      const confirmPassword = confirmInput.value
+
+      if (!username || !email || !password || !confirmPassword) {
+        showAlert('All fields are required')
+        return
+      }
+
+      if (username.length < 2 || username.length > 30) {
+        showAlert('Username must be between 2 and 30 characters')
+        return
+      }
+
+      if (password.length < 6) {
+        showAlert('Password must be at least 6 characters')
+        return
+      }
+
+      if (password !== confirmPassword) {
+        showAlert('Passwords do not match')
+        return
+      }
+
+      signupBtn.disabled = true
+      signupBtn.textContent = 'Creating account...'
+
+      try {
+        const result = await signUp(email, password, username)
+
+        if (result.success) {
+          showAlert(
+            'Account created successfully! Redirecting to login...',
+            'success'
+          )
+
+          setTimeout(() => {
+            window.location.href = 'login.html'
+          }, 1500)
+        } else {
+          showAlert(result.error || 'Signup failed. Please try again.')
+          signupBtn.disabled = false
+          signupBtn.textContent = 'Create Account'
+        }
+      } catch (error) {
+        console.error('Signup error:', error)
+        showAlert('An unexpected error occurred. Please try again.')
+        signupBtn.disabled = false
+        signupBtn.textContent = 'Create Account'
+      }
+    }
+
+    async function checkAuth() {
+      await initializeApp()
+
+      if (appState.isAuthenticated) {
+        window.location.href = 'app.html'
+      }
+    }
+
+    form.addEventListener('submit', handleSignup)
+
+    usernameInput.addEventListener('input', clearAlert)
+    emailInput.addEventListener('input', clearAlert)
+    passwordInput.addEventListener('input', clearAlert)
+
+    confirmInput.addEventListener('input', () => {
+      if (
+        passwordInput.value &&
+        confirmInput.value &&
+        passwordInput.value !== confirmInput.value
+      ) {
+        confirmInput.style.borderColor = '#ed4245'
+      } else {
+        confirmInput.style.borderColor = '#1e2128'
+      }
+    })
+
+    checkAuth()
+  </script>
+</body>
+</html>
