@@ -1,10 +1,11 @@
 import { supabase } from './supabase.js'
 
+
 /**
  * Get all rooms the current user belongs to.
  */
 export const getMyRooms = async () => {
-  // Get the current user
+
   const {
     data: {
       user
@@ -20,7 +21,6 @@ export const getMyRooms = async () => {
     }
   }
 
-  // Get the rooms this user belongs to
   const {
     data: memberships,
     error: membershipError
@@ -30,6 +30,7 @@ export const getMyRooms = async () => {
     .eq('user_id', user.id)
 
   if (membershipError) {
+
     console.error(
       'Error loading room memberships:',
       membershipError
@@ -43,6 +44,7 @@ export const getMyRooms = async () => {
   }
 
   if (!memberships || memberships.length === 0) {
+
     return {
       success: true,
       rooms: [],
@@ -50,29 +52,31 @@ export const getMyRooms = async () => {
     }
   }
 
-  // Extract room IDs
-  const roomIds = memberships.map(
-    membership => membership.room_id
-  )
+  const roomIds =
+    memberships.map(
+      membership => membership.room_id
+    )
 
-  // Get the actual rooms
   const {
     data: rooms,
     error: roomsError
   } = await supabase
     .from('rooms')
     .select(`
-  id,
-  name,
-  description,
-  owner_id,
-  invite_code,
-  created_at
-`)
+      id,
+      name,
+      description,
+      owner_id,
+      invite_code,
+      created_at
+    `)
     .in('id', roomIds)
-    .order('created_at', { ascending: true })
+    .order('created_at', {
+      ascending: true
+    })
 
   if (roomsError) {
+
     console.error(
       'Error loading rooms:',
       roomsError
@@ -92,12 +96,188 @@ export const getMyRooms = async () => {
   }
 }
 
-/** * Join a room using its invite code. */ export const joinRoom = async (inviteCode) => { const { data: { user }, error: userError } = await supabase.auth.getUser() if (userError || !user) { return { success: false, error: 'You must be logged in.' } } const cleanInviteCode = inviteCode.trim().toUpperCase() if (!cleanInviteCode) { return { success: false, error: 'Please enter an invite code.' } } // Find the room using the invite code const { data: rooms, error: roomError } = await supabase .rpc( 'get_room_by_invite_code', { code: cleanInviteCode } ) if (roomError) { console.error( 'Error finding room:', roomError ) return { success: false, error: roomError.message } } const room = rooms?.[0] if (!room) { return { success: false, error: 'Invalid invite code.' } } // Join the room const { error: joinError } = await supabase .from('room_members') .insert({ room_id: room.id, user_id: user.id }) if (joinError) { console.error( 'Error joining room:', joinError ) // Already a member if ( joinError.code === '23505' ) { return { success: false, error: 'You are already a member of this room.' } } return { success: false, error: joinError.message } } return { success: true, error: null } }
+
+/**
+ * Join a room using its invite code.
+ */
+export const joinRoom = async (
+  inviteCode
+) => {
+
+  const {
+    data: {
+      user
+    },
+    error: userError
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+
+    return {
+      success: false,
+      error: 'You must be logged in.'
+    }
+  }
+
+  const cleanInviteCode =
+    inviteCode
+      .trim()
+      .toUpperCase()
+
+  if (!cleanInviteCode) {
+
+    return {
+      success: false,
+      error: 'Please enter an invite code.'
+    }
+  }
+
+
+  // Find the room using the invite code.
+  const {
+    data: rooms,
+    error: roomError
+  } = await supabase
+    .rpc(
+      'get_room_by_invite_code',
+      {
+        code: cleanInviteCode
+      }
+    )
+
+  if (roomError) {
+
+    console.error(
+      'Error finding room:',
+      roomError
+    )
+
+    return {
+      success: false,
+      error: roomError.message
+    }
+  }
+
+  const room =
+    rooms?.[0]
+
+  if (!room) {
+
+    return {
+      success: false,
+      error: 'Invalid invite code.'
+    }
+  }
+
+
+  // Join the room.
+  const {
+    error: joinError
+  } = await supabase
+    .from('room_members')
+    .insert({
+      room_id: room.id,
+      user_id: user.id
+    })
+
+  if (joinError) {
+
+    console.error(
+      'Error joining room:',
+      joinError
+    )
+
+    // Already a member.
+    if (
+      joinError.code === '23505'
+    ) {
+
+      return {
+        success: false,
+        error: 'You are already a member of this room.'
+      }
+    }
+
+    return {
+      success: false,
+      error: joinError.message
+    }
+  }
+
+  return {
+    success: true,
+    error: null
+  }
+}
+
+
+/**
+ * Create a new room.
+ */
+export const createRoom = async (
+  name,
+  description = ''
+) => {
+
+  const {
+    data: {
+      user
+    },
+    error: userError
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+
+    return {
+      success: false,
+      room: null,
+      error: 'You must be logged in.'
+    }
+  }
+
+  const {
+    data,
+    error
+  } = await supabase
+    .from('rooms')
+    .insert({
+      name,
+      description:
+        description || null,
+      owner_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) {
+
+    console.error(
+      'Error creating room:',
+      error
+    )
+
+    return {
+      success: false,
+      room: null,
+      error: error.message
+    }
+  }
+
+  return {
+    success: true,
+    room: data,
+    error: null
+  }
+}
+
 
 /**
  * Get all channels in a room.
  */
-export const getChannels = async (roomId) => {
+export const getChannels = async (
+  roomId
+) => {
+
   const {
     data,
     error
@@ -110,12 +290,16 @@ export const getChannels = async (roomId) => {
       type,
       created_at
     `)
-    .eq('room_id', roomId)
+    .eq(
+      'room_id',
+      roomId
+    )
     .order('created_at', {
       ascending: true
     })
 
   if (error) {
+
     console.error(
       'Error loading channels:',
       error
@@ -143,6 +327,7 @@ export const createChannel = async (
   roomId,
   name
 ) => {
+
   const {
     data,
     error
@@ -156,6 +341,7 @@ export const createChannel = async (
     .single()
 
   if (error) {
+
     console.error(
       'Error creating channel:',
       error
@@ -175,17 +361,23 @@ export const createChannel = async (
   }
 }
 
+
 /**
  * Delete a room.
  */
-export const deleteRoom = async (roomId) => {
+export const deleteRoom = async (
+  roomId
+) => {
 
   const {
     error
   } = await supabase
     .from('rooms')
     .delete()
-    .eq('id', roomId)
+    .eq(
+      'id',
+      roomId
+    )
 
   if (error) {
 
@@ -210,14 +402,19 @@ export const deleteRoom = async (roomId) => {
 /**
  * Delete a channel.
  */
-export const deleteChannel = async (channelId) => {
+export const deleteChannel = async (
+  channelId
+) => {
 
   const {
     error
   } = await supabase
     .from('channels')
     .delete()
-    .eq('id', channelId)
+    .eq(
+      'id',
+      channelId
+    )
 
   if (error) {
 
