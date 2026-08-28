@@ -26,9 +26,28 @@
       <aside class="room-sidebar">
 
         <div class="sidebar-header">
-          <h2>Rooms</h2>
-          <button id="createRoomBtn" title="Create Room">+</button>
-        </div>
+  <h2>Rooms</h2>
+
+  <div class="room-header-actions">
+
+    <button
+      id="joinRoomBtn"
+      title="Join Room"
+      type="button"
+    >
+      #
+    </button>
+
+    <button
+      id="createRoomBtn"
+      title="Create Room"
+      type="button"
+    >
+      +
+    </button>
+
+  </div>
+</div>
 
         <div id="roomList" class="room-list">
           <p class="empty-message">Loading rooms...</p>
@@ -110,6 +129,57 @@
 
   </div>
 
+<!-- JOIN ROOM MODAL -->
+<div id="joinRoomModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <h2>Join a Room</h2>
+
+    <p class="modal-description">
+      Enter the Room ID to join the room.
+    </p>
+
+    <form id="joinRoomForm">
+
+      <label for="roomIdInput">
+        Room ID
+      </label>
+
+      <input
+        id="roomIdInput"
+        type="text"
+        placeholder="e.g. 12345678-abcd-..."
+        autocomplete="off"
+        required
+      >
+
+      <p
+        id="joinRoomError"
+        class="modal-error"
+      ></p>
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          id="cancelJoinRoomBtn"
+        >
+          Cancel
+        </button>
+
+        <button type="submit">
+          Join Room
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
 <script type="module">
 
 import {
@@ -124,7 +194,8 @@ import {
   deleteRoom,
   getChannels,
   createChannel,
-  deleteChannel
+  deleteChannel,
+  joinRoom
 } from '../js/rooms.js'
 
 import {
@@ -171,6 +242,24 @@ const createRoomForm =
 
 const cancelRoomBtn =
   document.getElementById('cancelRoomBtn')
+
+const joinRoomBtn =
+  document.getElementById('joinRoomBtn')
+
+const joinRoomModal =
+  document.getElementById('joinRoomModal')
+
+const joinRoomForm =
+  document.getElementById('joinRoomForm')
+
+const cancelJoinRoomBtn =
+  document.getElementById('cancelJoinRoomBtn')
+
+const roomIdInput =
+  document.getElementById('roomIdInput')
+
+const joinRoomError =
+  document.getElementById('joinRoomError')
 
 const roomNameInput =
   document.getElementById('roomName')
@@ -1445,6 +1534,215 @@ async function loadMessages(
       </div>
     `
 
+    // ===================================================
+    // FILE MESSAGE ACTIONS
+    // ===================================================
+
+    if (isFileMessage) {
+
+      const file =
+        message.files[0]
+
+
+      // =================================================
+      // DOWNLOAD FILE
+      // =================================================
+
+      const downloadButton =
+        messageElement.querySelector(
+          '.download-file-button'
+        )
+
+      if (downloadButton) {
+
+        downloadButton.addEventListener(
+          'click',
+          async () => {
+
+            downloadButton.disabled =
+              true
+
+            downloadButton.textContent =
+              '⏳ Downloading...'
+
+
+            try {
+
+              // Get signed URL
+
+              const urlResult =
+                await getFileUrl(
+                  file.storage_path
+                )
+
+
+              if (!urlResult.success) {
+
+                throw new Error(
+                  urlResult.error
+                )
+              }
+
+
+              // Fetch the actual file
+
+              const response =
+                await fetch(
+                  urlResult.url
+                )
+
+
+              if (!response.ok) {
+
+                throw new Error(
+                  `Download failed (${response.status})`
+                )
+              }
+
+
+              // Convert to Blob
+
+              const blob =
+                await response.blob()
+
+
+              // Create temporary local URL
+
+              const blobUrl =
+                URL.createObjectURL(
+                  blob
+                )
+
+
+              // Create temporary download link
+
+              const link =
+                document.createElement(
+                  'a'
+                )
+
+              link.href =
+                blobUrl
+
+              link.download =
+                file.filename
+
+              document.body.appendChild(
+                link
+              )
+
+
+              // Start download
+
+              link.click()
+
+
+              // Clean up
+
+              document.body.removeChild(
+                link
+              )
+
+              URL.revokeObjectURL(
+                blobUrl
+              )
+
+            } catch (error) {
+
+              console.error(
+                'Error downloading file:',
+                error
+              )
+
+              alert(
+                'Failed to download file: ' +
+                error.message
+              )
+
+            } finally {
+
+              downloadButton.disabled =
+                false
+
+              downloadButton.textContent =
+                'Download'
+
+            }
+
+          }
+        )
+      }
+
+
+      // =================================================
+      // DELETE FILE MESSAGE
+      // =================================================
+
+      const deleteFileMessageButton =
+        messageElement.querySelector(
+          '.delete-file-message-button'
+        )
+
+      if (deleteFileMessageButton) {
+
+        deleteFileMessageButton.addEventListener(
+          'click',
+          async () => {
+
+            const confirmed =
+              confirm(
+                `Delete "${file.filename}"?`
+              )
+
+            if (!confirmed) {
+              return
+            }
+
+
+            deleteFileMessageButton.disabled =
+              true
+
+
+            const result =
+              await deleteFile(
+                file
+              )
+
+
+            if (!result.success) {
+
+              deleteFileMessageButton.disabled =
+                false
+
+              alert(
+                'Failed to delete file: ' +
+                result.error
+              )
+
+              return
+            }
+
+
+            await loadMessages(
+              channelId
+            )
+
+          }
+        )
+      }
+
+
+      // IMPORTANT:
+      // File messages should NOT get
+      // Reply / Copy / Edit / normal Delete buttons.
+
+      messageList.appendChild(
+        messageElement
+      )
+
+      return
+    }
+
 
     // =================================================
     // REPLY
@@ -1772,6 +2070,91 @@ function closeCreateRoomModal() {
   createRoomForm.reset()
 }
 
+// =====================================================
+// JOIN ROOM
+// =====================================================
+
+joinRoomBtn.addEventListener(
+  'click',
+  () => {
+
+    joinRoomError.textContent = ''
+
+    joinRoomModal.classList.remove(
+      'hidden'
+    )
+
+    roomIdInput.focus()
+  }
+)
+
+
+cancelJoinRoomBtn.addEventListener(
+  'click',
+  () => {
+    closeJoinRoomModal()
+  }
+)
+
+
+joinRoomForm.addEventListener(
+  'submit',
+  async event => {
+
+    event.preventDefault()
+
+    const roomId =
+      roomIdInput.value.trim()
+
+    if (!roomId) {
+      return
+    }
+
+    joinRoomError.textContent = ''
+
+    const submitButton =
+      joinRoomForm.querySelector(
+        'button[type="submit"]'
+      )
+
+    submitButton.disabled = true
+    submitButton.textContent = 'Joining...'
+
+    const result =
+      await joinRoom(roomId)
+
+    if (!result.success) {
+
+      joinRoomError.textContent =
+        'Could not join room: ' +
+        result.error
+
+      submitButton.disabled = false
+      submitButton.textContent = 'Join Room'
+
+      return
+    }
+
+    closeJoinRoomModal()
+
+    await loadRooms()
+
+    submitButton.disabled = false
+    submitButton.textContent = 'Join Room'
+  }
+)
+
+
+function closeJoinRoomModal() {
+
+  joinRoomModal.classList.add(
+    'hidden'
+  )
+
+  joinRoomForm.reset()
+
+  joinRoomError.textContent = ''
+}
 
 // =====================================================
 // FILE SIZE

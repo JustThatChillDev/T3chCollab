@@ -92,6 +92,62 @@ export const getMyRooms = async () => {
   }
 }
 
+/**
+ * Join a room using its Room ID.
+ */
+export const joinRoom = async (roomId) => {
+
+  const {
+    data: {
+      user
+    },
+    error: userError
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return {
+      success: false,
+      error: 'You must be logged in.'
+    }
+  }
+
+  const cleanRoomId =
+    roomId.trim()
+
+  if (!cleanRoomId) {
+    return {
+      success: false,
+      error: 'Please enter a Room ID.'
+    }
+  }
+
+  const { error } =
+    await supabase
+      .from('room_members')
+      .insert({
+        room_id: cleanRoomId,
+        user_id: user.id
+      })
+
+  if (error) {
+
+    console.error(
+      'Error joining room:',
+      error
+    )
+
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+
+  return {
+    success: true,
+    error: null
+  }
+}
+
 
 /**
  * Create a new room.

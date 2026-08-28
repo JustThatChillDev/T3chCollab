@@ -781,3 +781,46 @@ header h1 span {
 .empty-channel p {
   margin: 0;
 }
+
+.room-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#joinRoomBtn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 6px;
+  border: none;
+  background: #1e2128;
+  color: #b5bac1;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#joinRoomBtn:hover {
+  background: #5865f2;
+  color: white;
+  transform: scale(1.05);
+}
+.modal-description {
+  color: #7e8695;
+  font-size: 13px;
+  margin: -8px 0 16px 0;
+  line-height: 1.5;
+}
+
+.modal-error {
+  color: #ed4245;
+  font-size: 12px;
+  min-height: 18px;
+  margin: 8px 0 0 0;
+}
