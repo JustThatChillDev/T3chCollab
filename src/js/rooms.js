@@ -121,7 +121,7 @@ export const joinRoom = async (inviteCode) => {
     }
   }
 
-  // Find the room using its invite code
+  // Find the room using the invite code
   const {
     data: room,
     error: roomError
@@ -132,7 +132,6 @@ export const joinRoom = async (inviteCode) => {
     .maybeSingle()
 
   if (roomError) {
-
     console.error(
       'Error finding room:',
       roomError
@@ -153,7 +152,7 @@ export const joinRoom = async (inviteCode) => {
 
   // Join the room
   const {
-    error: membershipError
+    error: joinError
   } = await supabase
     .from('room_members')
     .insert({
@@ -161,71 +160,31 @@ export const joinRoom = async (inviteCode) => {
       user_id: user.id
     })
 
-  if (membershipError) {
+  if (joinError) {
 
     console.error(
       'Error joining room:',
-      membershipError
+      joinError
     )
+
+    // Already a member
+    if (
+      joinError.code === '23505'
+    ) {
+      return {
+        success: false,
+        error: 'You are already a member of this room.'
+      }
+    }
 
     return {
       success: false,
-      error: membershipError.message
+      error: joinError.message
     }
   }
 
   return {
     success: true,
-    error: null
-  }
-}
-
-/**
- * Create a new room.
- */
-export const createRoom = async (
-  name,
-  description = ''
-) => {
-  const {
-    data: {
-      user
-    },
-    error: userError
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return {
-      success: false,
-      room: null,
-      error: 'You must be logged in.'
-    }
-  }
-
-  const { error } = await supabase
-    .from('rooms')
-    .insert({
-      name,
-      description: description || null,
-      owner_id: user.id
-    })
-
-  if (error) {
-    console.error(
-      'Error creating room:',
-      error
-    )
-
-    return {
-      success: false,
-      room: null,
-      error: error.message
-    }
-  }
-
-  return {
-    success: true,
-    room: null,
     error: null
   }
 }
