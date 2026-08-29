@@ -1,62 +1,25 @@
-\# T3chCollab
+# T3chCollab
 
+**T3chCollab: Start collaborating with friends, anytime anywhere.**
 
+## How to Set Up an Account
 
-Private collaboration platform for small groups.
+1. Go to the **Sign Up** page by clicking **"Sign Up"**.
+2. Sign up by choosing a username, entering your email, creating a password, and confirming your password.
+3. You will be redirected to the **Log In** page. Before logging in, **please kindly check your email inbox for emails from Supabase**.
+4. Click **Confirm** in the email. This will redirect you to an error page. Don't worry! Close the error page and return to the login page that was opened just now.
+5. Log in using your email and password.
+6. There you have it! 🎉 Enjoy your T3chCollab space.
 
+## Features
 
+- 💬 **Live Messaging** — No need to refresh the page to check for new messages.
+- 📁 **File Uploading** — Upload files safely and securely using Blob technology.
+- 🚪 **Room Management** — Join, create, and delete rooms.
+- 🛠️ **Channel Management** — Create and delete channels within rooms.
 
-\## Setup
+---
 
+Have fun in your **free-to-use collaboration space!** 🚀
 
-
-1\. Copy `.env.example` to `.env`
-
-2\. Fill in your Supabase credentials
-
-3\. Run `npm install`
-
-4\. Run `npm run dev`
-
-
-
-\## Supabase Setup
-
-
-
-1\. Create a Supabase project
-
-2\. Run the database migration SQL
-
-3\. Set up RLS policies
-
-4\. Create the `room-files` storage bucket
-
-
-
-\## Deployment
-
-
-
-Deploy to Netlify:
-
-
-
-1\. Connect your GitHub repository
-
-2\. Set environment variables
-
-3\. Deploy
-
-
-
-\## Development
-
-
-
-\- `npm run dev` - Start development server
-
-\- `npm run build` - Build for production
-
-\- `npm run preview` - Preview production build
-
+> **Note:** T3chCollab is still in development. Please expect bugs, errors, and unfinished features while development continues.
