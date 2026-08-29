@@ -235,19 +235,78 @@ export const createRoom = async (
     }
   }
 
+  const cleanName =
+    name.trim()
+
+  const cleanDescription =
+    description.trim() || null
+
+  if (!cleanName) {
+
+    return {
+      success: false,
+      room: null,
+      error: 'Room name is required.'
+    }
+  }
+
+  // Prefer the SECURITY DEFINER RPC from migration 005.
+  // It creates the room and owner membership in one database
+  // transaction, avoiding INSERT ... RETURNING RLS edge cases.
   const {
-    data,
+    data: rpcRooms,
+    error: rpcError
+  } = await supabase
+    .rpc(
+      'create_room_with_owner',
+      {
+        room_name: cleanName,
+        room_description: cleanDescription
+      }
+    )
+
+  if (!rpcError) {
+
+    return {
+      success: true,
+      room: rpcRooms?.[0] || null,
+      error: null
+    }
+  }
+
+  // Backward-compatible fallback for databases that have not
+  // applied migration 005 yet. Do not request the inserted row:
+  // some RLS setups allow INSERT for owners but block RETURNING
+  // until the room_members trigger has completed.
+  if (
+    rpcError.code !== '42883' &&
+    !String(rpcError.message || '')
+      .includes('create_room_with_owner')
+  ) {
+
+    console.error(
+      'Error creating room with RPC:',
+      rpcError
+    )
+
+    return {
+      success: false,
+      room: null,
+      error: rpcError.message
+    }
+  }
+
+  const roomPayload = {
+    name: cleanName,
+    description: cleanDescription,
+    owner_id: user.id
+  }
+
+  const {
     error
   } = await supabase
     .from('rooms')
-    .insert({
-      name,
-      description:
-        description || null,
-      owner_id: user.id
-    })
-    .select()
-    .single()
+    .insert(roomPayload)
 
   if (error) {
 
@@ -265,7 +324,7 @@ export const createRoom = async (
 
   return {
     success: true,
-    room: data,
+    room: roomPayload,
     error: null
   }
 }
