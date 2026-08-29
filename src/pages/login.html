@@ -11,7 +11,7 @@
   <div class="auth-container">
     <div class="auth-header">
       <h1>T3ch<span>Collab</span></h1>
-      <p>Welcome back</p>
+      <p>Reconnect to your private signal</p>
     </div>
 
     <form id="loginForm" class="auth-form">
@@ -22,7 +22,7 @@
         <input
           type="email"
           id="email"
-          placeholder="you@example.com"
+          placeholder="pilot@t3ch.space"
           required
           autocomplete="email"
         >
@@ -33,7 +33,7 @@
         <input
           type="password"
           id="password"
-          placeholder="Enter your password"
+          placeholder="Enter access phrase"
           required
           autocomplete="current-password"
           minlength="6"
@@ -41,7 +41,7 @@
       </div>
 
       <button type="submit" class="auth-btn" id="loginBtn">
-        Sign In
+        Enter Node
       </button>
     </form>
 
@@ -104,13 +104,13 @@
         } else {
           showAlert(result.error || 'Login failed. Please try again.')
           loginBtn.disabled = false
-          loginBtn.textContent = 'Sign In'
+          loginBtn.textContent = 'Enter Node'
         }
       } catch (error) {
         console.error('Login error:', error)
         showAlert('An unexpected error occurred. Please try again.')
         loginBtn.disabled = false
-        loginBtn.textContent = 'Sign In'
+        loginBtn.textContent = 'Enter Node'
       }
     }
 

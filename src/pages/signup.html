@@ -11,7 +11,7 @@
   <div class="auth-container">
     <div class="auth-header">
       <h1>T3ch<span>Collab</span></h1>
-      <p>Create your account</p>
+      <p>Launch a private collaboration node</p>
     </div>
 
     <form id="signupForm" class="auth-form">
@@ -22,7 +22,7 @@
         <input
           type="text"
           id="username"
-          placeholder="Choose a username"
+          placeholder="Choose a callsign"
           required
           autocomplete="username"
           minlength="2"
@@ -36,7 +36,7 @@
         <input
           type="email"
           id="email"
-          placeholder="you@example.com"
+          placeholder="pilot@t3ch.space"
           required
           autocomplete="email"
         >
@@ -47,7 +47,7 @@
         <input
           type="password"
           id="password"
-          placeholder="Create a password"
+          placeholder="Create access phrase"
           required
           autocomplete="new-password"
           minlength="6"
@@ -60,7 +60,7 @@
         <input
           type="password"
           id="confirmPassword"
-          placeholder="Confirm your password"
+          placeholder="Confirm access phrase"
           required
           autocomplete="new-password"
           minlength="6"
@@ -68,7 +68,7 @@
       </div>
 
       <button type="submit" class="auth-btn" id="signupBtn">
-        Create Account
+        Launch Node
       </button>
     </form>
 
@@ -147,13 +147,13 @@
         } else {
           showAlert(result.error || 'Signup failed. Please try again.')
           signupBtn.disabled = false
-          signupBtn.textContent = 'Create Account'
+          signupBtn.textContent = 'Launch Node'
         }
       } catch (error) {
         console.error('Signup error:', error)
         showAlert('An unexpected error occurred. Please try again.')
         signupBtn.disabled = false
-        signupBtn.textContent = 'Create Account'
+        signupBtn.textContent = 'Launch Node'
       }
     }
 
