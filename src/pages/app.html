@@ -1239,7 +1239,7 @@ async function loadMessages(
           <strong>
             ${escapeHtml(
               getDisplayName(
-                message.user_id
+                message
               )
             )}
           </strong>
@@ -1473,7 +1473,7 @@ async function loadMessages(
         <strong>
           ${escapeHtml(
             getDisplayName(
-              message.user_id
+              message
             )
           )}
         </strong>
@@ -1771,7 +1771,7 @@ async function loadMessages(
 
           messageInput.value =
             `@${getDisplayName(
-              message.user_id
+              message
             )} `
 
           messageInput.focus()
@@ -2222,12 +2222,29 @@ function escapeHtml(
 // =====================================================
 
 function getDisplayName(
-  userId
+  message
 ) {
+
+  if (!message) {
+    return 'User'
+  }
+
+  // Prefer the username resolved from the
+  // profile lookup performed in getMessages.
+
+  const username =
+    message.username
+
+  if (username) {
+    return username
+  }
+
+  // Fall back to the local profile for
+  // your own messages.
 
   if (
     appState.user &&
-    userId ===
+    message.user_id ===
       appState.user.id
   ) {
 

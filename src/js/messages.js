@@ -69,9 +69,80 @@ export const getMessages = async (
   }
 
 
+  const messages =
+    data || []
+
+
+  // ===================================================
+  // Resolve sender usernames.
+  //
+  // We fetch the profiles for every unique
+  // message author so we can show the real
+  // username (e.g. "jayden") instead of the
+  // hard-coded "User" fallback.
+  // ===================================================
+
+  const userIds = [
+    ...new Set(
+      messages
+        .map(message =>
+          message.user_id
+        )
+        .filter(Boolean)
+    )
+  ]
+
+  const profileMap =
+    new Map()
+
+  if (userIds.length > 0) {
+
+    const {
+      data: profilesData,
+      error: profilesError
+    } = await supabase
+      .from('profiles')
+      .select('user_id, username')
+      .in(
+        'user_id',
+        userIds
+      )
+
+    if (profilesError) {
+
+      console.error(
+        'Error loading profiles:',
+        profilesError
+      )
+    } else {
+
+      ;(profilesData || []).forEach(
+        profile => {
+
+          if (profile?.user_id) {
+
+            profileMap.set(
+              profile.user_id,
+              profile.username
+            )
+          }
+        }
+      )
+    }
+  }
+
+
+  messages.forEach(message => {
+
+    message.username = profileMap.get(
+      message.user_id
+    ) || null
+  })
+
+
   return {
     success: true,
-    messages: data || [],
+    messages,
     error: null
   }
 }
