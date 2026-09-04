@@ -2,6 +2,8 @@
 
 **T3chCollab: Start collaborating with friends, anytime anywhere.**
 
+> 🏠 **Public Welcoming Room:** `82014DFD`
+
 ## How to Set Up an Account
 
 1. Go to the **Sign Up** page by clicking **"Sign Up"**.
