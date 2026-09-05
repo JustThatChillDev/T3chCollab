@@ -12,7 +12,8 @@ export const getMyRooms = async () => {
     },
     error: userError
   } = await supabase.auth.getUser()
-
+  console.log("ROOM USER ID:", user?.id)
+  console.log("ROOM USER ROLE:", user?.role)
   if (userError || !user) {
     return {
       success: false,
@@ -57,7 +58,7 @@ export const getMyRooms = async () => {
       membership => membership.room_id
     )
 
-  const {
+const {
     data: rooms,
     error: roomsError
   } = await supabase
@@ -226,6 +227,9 @@ export const createRoom = async (
     error: userError
   } = await supabase.auth.getUser()
 
+  console.log("ROOM USER ID:", user?.id)
+  console.log("ROOM USER ROLE:", user?.role)
+
   if (userError || !user) {
 
     return {
@@ -234,6 +238,15 @@ export const createRoom = async (
       error: 'You must be logged in.'
     }
   }
+
+  // Debug authentication test.
+  const {
+    data: authTest,
+    error: authTestError
+  } = await supabase.rpc('get_my_user_id')
+
+  console.log('AUTH TEST:', authTest)
+  console.log('AUTH TEST ERROR:', authTestError)
 
   const cleanName =
     name.trim()
@@ -275,9 +288,7 @@ export const createRoom = async (
   }
 
   // Backward-compatible fallback for databases that have not
-  // applied migration 005 yet. Do not request the inserted row:
-  // some RLS setups allow INSERT for owners but block RETURNING
-  // until the room_members trigger has completed.
+  // applied migration 005 yet.
   if (
     rpcError.code !== '42883' &&
     !String(rpcError.message || '')
@@ -328,7 +339,6 @@ export const createRoom = async (
     error: null
   }
 }
-
 
 /**
  * Get all channels in a room.
